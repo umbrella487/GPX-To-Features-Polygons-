@@ -40,10 +40,15 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature, RasterAttach
                 plot = arcpy.Polygon(arr, coord_sys)
                 ic.insertRow((plot, x))
         if RasterAttachment_condition == 'ATTACHED':
+            arcpy.SetProgressorLabel('Creating Raster Catalog')
             arcpy.CreateRasterCatalog_management(wks, 'RasterCatalog')
+            arcpy.SetProgressorLabel('Copying Certificates to RasterCatalog......')
             arcpy.WorkspaceToRasterCatalog_management(RasterFiles_Location, os.path.join(wks, 'RasterCatalog'))
+            arcpy.SetProgressorLabel('Adding Name field to RasterCatalog......')
             arcpy.AddField_management(os.path.join(wks, 'RasterCatalog'), 'Name_0', 'TEXT')
+            arcpy.SetProgressorLabel('Calculating Name field to RasterCatalog......')
             arcpy.CalculateField_management(os.path.join(wks, 'RasterCatalog'), 'Name_0', expr, 'PYTHON', codeblock)
+            arcpy.SetProgressorLabel('Joining Certificates to Feature......')
             arcpy.JoinField_management(outputFeature, name_desc_col, os.path.join(wks, 'RasterCatalog'), 'Name_0')
         pass
     except arcpy.ExecuteError as err:
