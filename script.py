@@ -42,6 +42,7 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
                 plot = arcpy.Polygon(arr, coord_sys)
                 ic.insertRow((plot, x))
         if area_condition == 'true':
+            #Process: Compute area of various polygons
             arcpy.SetProgressorLabel('Computing Area of{}.........'.format(os.path.basename(outputFeature)))
             areaHeader = 'Area_{}'.format(area_unit.capitalize())
             arcpy.AddField_management(outputFeature, areaHeader, 'DOUBLE')
