@@ -42,9 +42,10 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
                 plot = arcpy.Polygon(arr, coord_sys)
                 ic.insertRow((plot, x))
         if area_condition == 'true':
-            arcpy.AddField_management(outputFeature, 'Area_{}'.format(area_unit.capitalize()), 'DOUBLE')
+            areaHeader = 'Area_{}'.format(area_unit.capitalize())
+            arcpy.AddField_management(outputFeature, areaHeader, 'DOUBLE')
             arcpy.SetProgressorLabel('Computing Area of{}.........'.format(os.path.basename(outputFeature)))
-            arcpy.CalculateField_management(outputFeature, 'Area_{}'.format(area_unit), '!shape.area@{}!'.format(area_unit.lower()),'PYTHON')
+            arcpy.CalculateField_management(outputFeature, areaHeader, '!shape.area@{}!'.format(area_unit.lower()),'PYTHON')
 
         if RasterAttachment_condition == 'ATTACHED':
             arcpy.SetProgressorLabel('Creating Raster Catalog')
