@@ -14,7 +14,7 @@ def getFileName(path):
             bname = bname.replace('-','')
     return bname
 
-def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature, RasterAttachment_condition='',RasterFiles_Location=''):
+def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_condition='',area_unit='', RasterAttachment_condition='',RasterFiles_Location=''):
     try:
         polygons={}
         gpxFiles = ConversionUtils.SplitMultiInputs(gpxFiles)
@@ -39,16 +39,22 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature, RasterAttach
                 arr.append(arr[0])
                 plot = arcpy.Polygon(arr, coord_sys)
                 ic.insertRow((plot, x))
+        if area_condition == 'true':
+            arcpy.AddGeometryAttributes_management(outputFeature,'AREA', '', area_unit, coord_sys)
         if RasterAttachment_condition == 'ATTACHED':
             arcpy.SetProgressorLabel('Creating Raster Catalog')
             arcpy.CreateRasterCatalog_management(wks, 'RasterCatalog')
+
             arcpy.SetProgressorLabel('Copying Certificates to RasterCatalog......')
             arcpy.WorkspaceToRasterCatalog_management(RasterFiles_Location, os.path.join(wks, 'RasterCatalog'))
+
             arcpy.SetProgressorLabel('Adding Name field to RasterCatalog......')
             arcpy.AddField_management(os.path.join(wks, 'RasterCatalog'), 'Name_0', 'TEXT')
+
             arcpy.SetProgressorLabel('Calculating Name field to RasterCatalog......')
             arcpy.CalculateField_management(os.path.join(wks, 'RasterCatalog'), 'Name_0', expr, 'PYTHON', codeblock)
-            arcpy.SetProgressorLabel('Joining Certificates to Feature......')
+
+            arcpy.SetProgressorLabel('Joining Certificates to {}......'.format(os.path.basename(outputFeature)))
             arcpy.JoinField_management(outputFeature, name_desc_col, os.path.join(wks, 'RasterCatalog'), 'Name_0')
         pass
     except arcpy.ExecuteError as err:
