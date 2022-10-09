@@ -1,3 +1,4 @@
+from genericpath import exists
 import arcpy
 import os
 import ConversionUtils
@@ -14,7 +15,8 @@ def getFileName(path):
             bname = bname.replace('-','')
     return bname
 
-def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_condition='',area_unit='', RasterAttachment_condition='',RasterFiles_Location=''):
+def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_condition='',area_unit='', 
+                    RasterAttachment_condition='',RasterFiles_Location=''):
     try:
         polygons={}
         gpxFiles = ConversionUtils.SplitMultiInputs(gpxFiles)
@@ -40,7 +42,10 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
                 plot = arcpy.Polygon(arr, coord_sys)
                 ic.insertRow((plot, x))
         if area_condition == 'true':
-            arcpy.AddGeometryAttributes_management(outputFeature,'AREA', '', area_unit, coord_sys)
+            arcpy.AddField_management(outputFeature, 'Area_{}'.format(area_unit.capitalize()), 'DOUBLE')
+            arcpy.SetProgressorLabel('Computing Area of{}.........'.format(os.path.basename(outputFeature)))
+            arcpy.CalculateField_management(outputFeature, 'Area_{}'.format(area_unit), '!shape.area@{}!'.format(area_unit.lower()),'PYTHON')
+
         if RasterAttachment_condition == 'ATTACHED':
             arcpy.SetProgressorLabel('Creating Raster Catalog')
             arcpy.CreateRasterCatalog_management(wks, 'RasterCatalog')
@@ -56,12 +61,20 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
 
             arcpy.SetProgressorLabel('Joining Certificates to {}......'.format(os.path.basename(outputFeature)))
             arcpy.JoinField_management(outputFeature, name_desc_col, os.path.join(wks, 'RasterCatalog'), 'Name_0')
+            arcpy.DeleteField_management(outputFeature, 'Name_1')
+            arcpy.DeleteField_management(outputFeature, 'Name_0')
+            
+            arcpy.Delete_management(os.path.join(wks, 'RasterCatalog'))
         pass
     except arcpy.ExecuteError as err:
         arcpy.AddError(err)
+        for gpxfile in gpxFiles:
+               if (exists(os.path.join(wks, '{}_points'.format(getFileName(gpxfile))))):
+                arcpy.Delete_management(os.path.join(wks, '{}_points'.format(getFileName(gpxfile))))
+               if (exists(os.path.join(wks, '{}_points_proj'.format(getFileName(gpxfile))))):
+                arcpy.Delete_management(os.path.join(wks, '{}_points_proj'.format(getFileName(gpxfile))))
     finally:
         del(polygons) #clean up
-        arcpy.Delete_management(os.path.join(wks, 'RasterCatalog'))
 
 if __name__=='__main__':
     args = tuple(arcpy.GetParameterAsText(i)for i in range(arcpy.GetArgumentCount()))
