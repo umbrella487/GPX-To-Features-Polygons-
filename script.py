@@ -44,12 +44,16 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
         if area_condition == 'true':
             #Process: Compute area of various polygons
             arcpy.SetProgressorLabel('Computing Area of{}.........'.format(os.path.basename(outputFeature)))
+            arcpy.AddMessage('Computing Area of{}.........'.format(os.path.basename(outputFeature)))
             areaHeader = 'Area_{}'.format(area_unit.capitalize())
+            if len(areaHeader) > 10:
+                areaHeader = areaHeader[0:10]
             arcpy.AddField_management(outputFeature, areaHeader, 'DOUBLE')
             arcpy.CalculateField_management(outputFeature, areaHeader, '!shape.area@{}!'.format(area_unit.lower()),'PYTHON')
 
         if RasterAttachment_condition == 'ATTACHED':
-            arcpy.SetProgressorLabel('Creating Raster Catalog')
+            arcpy.SetProgressorLabel('Creating Raster Catalog.......')
+            arcpy.AddMessage('Creating Raster Catalog.......')
             arcpy.CreateRasterCatalog_management(wks, 'RasterCatalog')
 
             arcpy.SetProgressorLabel('Copying Certificates to RasterCatalog......')
@@ -61,11 +65,11 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
             arcpy.SetProgressorLabel('Calculating Name field to RasterCatalog......')
             arcpy.CalculateField_management(os.path.join(wks, 'RasterCatalog'), 'Name_0', expr, 'PYTHON', codeblock)
 
-            arcpy.SetProgressorLabel('Joining Certificates to {}......'.format(os.path.basename(outputFeature)))
+            arcpy.SetProgressorLabel('Attaching Certificates to {}......'.format(os.path.basename(outputFeature)))
+            arcpy.AddMessage('Attaching Certificates to {}......'.format(os.path.basename(outputFeature)))
             arcpy.JoinField_management(outputFeature, name_desc_col, os.path.join(wks, 'RasterCatalog'), 'Name_0')
             arcpy.DeleteField_management(outputFeature, 'Name_1')
             arcpy.DeleteField_management(outputFeature, 'Name_0')
-            
             arcpy.Delete_management(os.path.join(wks, 'RasterCatalog'))
         pass
     except arcpy.ExecuteError as err:
@@ -76,6 +80,7 @@ def gpxtoPolygon(gpxFiles, name_desc_col, coord_sys, outputFeature,area_conditio
                if (exists(os.path.join(wks, '{}_points_proj'.format(getFileName(gpxfile))))):
                 arcpy.Delete_management(os.path.join(wks, '{}_points_proj'.format(getFileName(gpxfile))))
     finally:
+        arcpy.AddMessage('Cleaning up.................')
         del(polygons) #clean up
 
 if __name__=='__main__':
