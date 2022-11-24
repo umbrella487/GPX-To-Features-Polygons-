@@ -5,7 +5,7 @@ import ConversionUtils
 def fName(path):
     bname = os.path.basename(path).split('.')[0]
     for x in bname:
-        if x in ['-','&',]:
+        if x in ['-','&']:
             bname = bname.replace(x,'_')
     return bname
 
