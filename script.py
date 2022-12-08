@@ -21,7 +21,7 @@ def gpxtoPolygon(gpxFiles, name_desc_col, outputFeature, computeArea='', areaUni
             with arcpy.da.SearchCursor(r'in_memory\tempFile{}'.format(fName(gpxfile)),['Shape@XYZ',name_desc_col]) as sc:
                 for row in sc:
                     if row[1] not in polygons.keys():
-                        polygons[row[1]] = arcpy.Array([arcpy.Point(row[0][0],row[0][1])])
+                        polygons[row[1]] = arcpy.Array(arcpy.Point(row[0][0],row[0][1]))
                     else:
                         polygons[row[1]].append(arcpy.Point(row[0][0],row[0][1]))
             cleanUp(r'in_memory\tempFile{}'.format(fName(gpxfile)))
@@ -29,12 +29,12 @@ def gpxtoPolygon(gpxFiles, name_desc_col, outputFeature, computeArea='', areaUni
         arcpy.CreateFeatureclass_management(os.path.dirname(outputFeature), os.path.basename(outputFeature),'POLYGON','','','',arcpy.SpatialReference(4326))
         arcpy.AddField_management(outputFeature, name_desc_col, 'TEXT')
         with arcpy.da.InsertCursor(outputFeature,['Shape@',name_desc_col]) as ic:
-            for x in polygons:
-                plot = arcpy.Polygon(polygons[x], arcpy.SpatialReference(4326))
-                ic.insertRow((plot, x))
+            for key,value in polygons.items():
+                plot = arcpy.Polygon(value, arcpy.SpatialReference(4326))
+                ic.insertRow((plot, key))
 
         if computeArea == 'true':
-            fieldName = 'Area_in_'
+            fieldName = 'Area_'
             count = 0
             while len(fieldName) != 10:
                 fieldName+=areaUnit[count]
